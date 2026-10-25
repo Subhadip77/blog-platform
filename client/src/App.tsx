@@ -7,13 +7,17 @@ import RegisterPage from './features/auth/RegisterPage';
 import PublicLayout from './layouts/PublicLayout';
 import RequireAuth from './layouts/RequireAuth';
 import RequireRole from './layouts/RequireRole';
+import PostListPage from './features/posts/PostListPage';
+import PostDetailPage from './features/posts/PostDetailPage';
+import PostFormPage from './features/posts/PostFormPage';
+
 
 // Regular users never download the admin bundle.
 const AdminHome = lazy(() => import('./features/admin/AdminHome'));
 
-function Home() {
-  return <h1 className="text-2xl font-semibold">Posts will appear here (next step)</h1>;
-}
+
+
+
 
 export default function App() {
   return (
@@ -21,15 +25,18 @@ export default function App() {
       <Suspense fallback={<Spinner />}>
         <Routes>
           <Route element={<PublicLayout />}>
-            <Route index element={<Home />} />
+            <Route index element={<PostListPage />} />
+            <Route path="posts/:slug" element={<PostDetailPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="auth/callback" element={<CallbackPage />} />
 
             <Route element={<RequireAuth />}>
-              <Route element={<RequireRole role="admin" />}>
-                <Route path="admin" element={<AdminHome />} />
-              </Route>
+                <Route path="posts/new" element={<PostFormPage />} />
+                <Route path="posts/:slug/edit" element={<PostFormPage />} />
+                <Route element={<RequireRole role="admin" />}>
+                    <Route path="admin" element={<AdminHome />} />
+                </Route>
             </Route>
 
             <Route path="*" element={<h1 className="p-8 text-muted">404 Page not found</h1>} />
