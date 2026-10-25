@@ -12,5 +12,9 @@ router.post('/login', authLimiter, validate({ body: loginSchema }), authControll
 router.get('/me', authenticate, authController.me);
 router.post('/refresh', refreshLimiter, authController.refresh);
 router.post('/logout', authController.logout);
+router.get('/google', authLimiter, authController.socialStart('google'));
+router.get('/google/callback', authLimiter, authController.socialCallback('google'));
+router.get('/facebook', authLimiter, authController.socialStart('facebook'));
+router.get('/facebook/callback', authLimiter, authController.socialCallback('facebook'));
 
 export default router;

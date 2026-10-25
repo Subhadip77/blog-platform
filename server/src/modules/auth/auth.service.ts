@@ -28,72 +28,85 @@ async function issueSession(user: { id: string; role: UserRole }, family: string
 }
 
 export const authService = {
-  async register(input: RegisterInput) {
-    const user = await userService.createLocal(input);
-    const session = await issueSession({ id: user.id, role: user.role });
-    activityBus.emit({ action: 'user.registered', actorId: user.id, targetType: 'user', targetId: user.id });
-    return { user, ...session };
-  },
+    async register(input: RegisterInput) {
+        const user = await userService.createLocal(input);
+        const session = await issueSession({ id: user.id, role: user.role });
+        activityBus.emit({ action: 'user.registered', actorId: user.id, targetType: 'user', targetId: user.id });
+        return { user, ...session };
+    },
 
-  async login(input: LoginInput) {
-    const user = await userService.findByEmailWithPassword(input.email);
+  // Social login: identity is already proven by the provider, so we only issue our session.
+    async startSession(user: { id: string; role: UserRole }, provider: string) {
+        const session = await issueSession(user);
+        activityBus.emit({
+        action: 'user.login',
+        actorId: user.id,
+        targetType: 'user',
+        targetId: user.id,
+        meta: { provider },
+        });
+        return session;
+    },
 
-    // Always run bcrypt, even for unknown emails, so response time doesn't reveal which emails exist.
-    const passwordOk = await verifyPassword(input.password, user?.passwordHash ?? DUMMY_HASH);
+    async login(input: LoginInput) {
+        const user = await userService.findByEmailWithPassword(input.email);
 
-    if (!user || !user.passwordHash || !passwordOk || !user.isActive) {
-      activityBus.emit({
-        action: 'user.login_failed',
-        actorId: user?.id,
-        targetType: user ? 'user' : undefined,
-        targetId: user?.id,
-      });
-      throw new UnauthorizedError('Invalid email or password'); // one message for every failure
-    }
+        // Always run bcrypt, even for unknown emails, so response time doesn't reveal which emails exist.
+        const passwordOk = await verifyPassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
-    const session = await issueSession({ id: user.id, role: user.role });
-    activityBus.emit({ action: 'user.login', actorId: user.id, targetType: 'user', targetId: user.id });
-    return { user, ...session };
-  },
+        if (!user || !user.passwordHash || !passwordOk || !user.isActive) {
+        activityBus.emit({
+            action: 'user.login_failed',
+            actorId: user?.id,
+            targetType: user ? 'user' : undefined,
+            targetId: user?.id,
+        });
+        throw new UnauthorizedError('Invalid email or password'); // one message for every failure
+        }
 
-  async refresh(token: string | undefined) {
-    if (!token) throw new UnauthorizedError('Refresh token missing');
-    const payload = tokenService.verifyRefresh(token);
+        const session = await issueSession({ id: user.id, role: user.role });
+        activityBus.emit({ action: 'user.login', actorId: user.id, targetType: 'user', targetId: user.id });
+        return { user, ...session };
+    },
 
-    // Atomic "claim": only ONE request can flip revokedAt from empty to a date.
-    const claimed = await RefreshTokenModel.findOneAndUpdate(
-      { jti: payload.jti, tokenHash: sha256(token), revokedAt: null },
-      { revokedAt: new Date() },
-    );
+    async refresh(token: string | undefined) {
+        if (!token) throw new UnauthorizedError('Refresh token missing');
+        const payload = tokenService.verifyRefresh(token);
 
-    if (!claimed) {
-      // Signature is valid but the token was already used or revoked: treat as theft.
-      await RefreshTokenModel.updateMany({ family: payload.fam, revokedAt: null }, { revokedAt: new Date() });
-      activityBus.emit({
-        action: 'auth.token_reuse_detected',
-        actorId: payload.sub,
-        targetType: 'session',
-        meta: { family: payload.fam },
-      });
-      throw new UnauthorizedError('Session expired, please log in again');
-    }
+        // Atomic "claim": only ONE request can flip revokedAt from empty to a date.
+        const claimed = await RefreshTokenModel.findOneAndUpdate(
+        { jti: payload.jti, tokenHash: sha256(token), revokedAt: null },
+        { revokedAt: new Date() },
+        );
 
-    const user = await UserModel.findById(payload.sub);
-    if (!user || !user.isActive) throw new UnauthorizedError('Session expired, please log in again');
+        if (!claimed) {
+        // Signature is valid but the token was already used or revoked: treat as theft.
+        await RefreshTokenModel.updateMany({ family: payload.fam, revokedAt: null }, { revokedAt: new Date() });
+        activityBus.emit({
+            action: 'auth.token_reuse_detected',
+            actorId: payload.sub,
+            targetType: 'session',
+            meta: { family: payload.fam },
+        });
+        throw new UnauthorizedError('Session expired, please log in again');
+        }
 
-    const session = await issueSession({ id: user.id, role: user.role }, claimed.family);
-    await RefreshTokenModel.updateOne({ _id: claimed._id }, { replacedBy: session.jti });
-    return { user, ...session };
-  },
+        const user = await UserModel.findById(payload.sub);
+        if (!user || !user.isActive) throw new UnauthorizedError('Session expired, please log in again');
 
-  async logout(token: string | undefined) {
-    if (!token) return;
-    try {
-      const { sub, fam } = tokenService.verifyRefresh(token);
-      await RefreshTokenModel.updateMany({ family: fam, revokedAt: null }, { revokedAt: new Date() });
-      activityBus.emit({ action: 'user.logout', actorId: sub, targetType: 'user', targetId: sub });
-    } catch {
-      // Token already invalid or expired: nothing to revoke, and logout stays idempotent.
-    }
-  },
+        const session = await issueSession({ id: user.id, role: user.role }, claimed.family);
+        await RefreshTokenModel.updateOne({ _id: claimed._id }, { replacedBy: session.jti });
+        return { user, ...session };
+    },
+
+    async logout(token: string | undefined) {
+        if (!token) return;
+        try {
+        const { sub, fam } = tokenService.verifyRefresh(token);
+        await RefreshTokenModel.updateMany({ family: fam, revokedAt: null }, { revokedAt: new Date() });
+        activityBus.emit({ action: 'user.logout', actorId: sub, targetType: 'user', targetId: sub });
+        } catch {
+        // Token already invalid or expired: nothing to revoke, and logout stays idempotent.
+        }
+    },
 };

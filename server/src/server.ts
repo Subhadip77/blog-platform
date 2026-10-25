@@ -2,10 +2,13 @@ import { createApp } from './app';
 import { connectDB, disconnectDB } from './config/db';
 import { env } from './config/env';
 import { registerAuditListener } from './modules/audit/audit.listener';
+import { configurePassport } from './config/passport';
+
 
 async function main() {
   await connectDB();
   registerAuditListener();
+  configurePassport();
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
