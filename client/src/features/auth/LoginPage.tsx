@@ -6,6 +6,7 @@ import { errorMessage } from '../../lib/http';
 import { useAuth } from './AuthContext';
 import { loginSchema, type LoginForm } from './schemas';
 import { SocialButtons } from './SocialButtons';
+import { PasswordInput } from '../../components/PasswordInput';
 
 const input = 'w-full rounded border border-line bg-surface px-3 py-2 outline-none focus:border-primary';
 
@@ -37,8 +38,7 @@ export default function LoginPage() {
           {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
         </div>
         <div>
-          <input {...register('password')} type="password" placeholder="Password" className={input} />
-          {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
+          <PasswordInput {...register('password')} placeholder="Password" />
         </div>
         <button disabled={isSubmitting} className="w-full rounded bg-primary px-4 py-2 font-medium text-white hover:bg-primary-hover disabled:opacity-60">
           {isSubmitting ? 'Signing in...' : 'Log in'}
