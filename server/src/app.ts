@@ -9,7 +9,8 @@ import { validate } from './middleware/validate';
 import { registerSchema } from './modules/auth/auth.schema';
 import { userService } from './modules/users/user.service';
 import authRoutes from './modules/auth/auth.routes';
-
+import { authenticate } from './middleware/authenticate';
+import { authorize } from './middleware/authorize';
 
 export function createApp() {
   const app = express();
@@ -25,6 +26,10 @@ export function createApp() {
 
     if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
     app.use('/api/v1/auth', authRoutes);
+
+    app.get('/api/v1/_admin-test', authenticate, authorize('admin'), (_req, res) => {
+        res.json({ success: true, data: 'hello admin' });
+    });
     
     // Next step: routes, notFound, errorHandler
     app.use(notFound);

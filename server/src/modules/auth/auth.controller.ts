@@ -3,6 +3,8 @@ import { env } from '../../config/env';
 import { sendSuccess } from '../../common/utils/apiResponse';
 import { authService } from './auth.service';
 import type { LoginInput, RegisterInput } from './auth.schema';
+import { userService } from '../users/user.service';
+import { NotFoundError } from '../../common/errors/AppError';
 
 const COOKIE_NAME = 'refreshToken';
 
@@ -33,6 +35,12 @@ export const authController = {
     const { user, accessToken, refreshToken } = await authService.refresh(req.cookies?.[COOKIE_NAME]);
     setRefreshCookie(res, refreshToken);
     sendSuccess(res, { user, accessToken });
+  },
+
+  async me(req: Request, res: Response) {
+    const user = await userService.findById(req.user!.id);
+    if (!user || !user.isActive) throw new NotFoundError('User not found');
+    sendSuccess(res, { user });
   },
 
   async logout(req: Request, res: Response) {
