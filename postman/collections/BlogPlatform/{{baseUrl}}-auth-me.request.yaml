@@ -1,0 +1,10 @@
+$kind: http-request
+name: "{{baseUrl}}/auth/me"
+description: ""
+url: "{{baseUrl}}/auth/me"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_17m9}}"
+order: 5000

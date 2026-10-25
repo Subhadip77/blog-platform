@@ -12,7 +12,10 @@ const postSchema = new Schema(
 );
 
 // Slug must be unique only among ACTIVE posts, so a deleted post doesn't block its slug.
-postSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { deletedAt: { $exists: false } } });
+postSchema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { deletedAt: null } },
+);
 postSchema.index({ createdAt: -1 }); // public feed
 postSchema.index({ author: 1, createdAt: -1 }); // "posts by this author"
 

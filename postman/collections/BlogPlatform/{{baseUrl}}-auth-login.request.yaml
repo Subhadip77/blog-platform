@@ -1,0 +1,9 @@
+$kind: http-request
+name: "{{baseUrl}}/auth/login"
+description: ""
+url: "{{baseUrl}}/auth/login"
+method: POST
+body:
+  type: json
+  content: '{ "email": "auth2@example.com", "password": "Passw0rdOK" }'
+order: 1000

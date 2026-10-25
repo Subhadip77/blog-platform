@@ -1,0 +1,14 @@
+$kind: http-request
+name: "{{baseUrl}}/auth/refresh"
+description: ""
+url: "{{baseUrl}}/auth/refresh?"
+method: POST
+queryParams:
+  - key: ""
+    value: null
+    disabled: false
+    description: ""
+body:
+  type: json
+  content: ""
+order: 2000

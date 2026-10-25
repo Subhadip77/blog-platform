@@ -1,0 +1,9 @@
+$kind: http-request
+name: "{{baseUrl}}/posts"
+description: ""
+url: "{{baseUrl}}/posts"
+method: POST
+body:
+  type: json
+  content: ""
+order: 7000
