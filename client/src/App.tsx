@@ -12,9 +12,12 @@ import PostDetailPage from './features/posts/PostDetailPage';
 import PostFormPage from './features/posts/PostFormPage';
 
 
-// Regular users never download the admin bundle.
-const AdminHome = lazy(() => import('./features/admin/AdminHome'));
-
+const AdminLayout = lazy(() => import('./features/admin/AdminLayout'));
+const DashboardPage = lazy(() => import('./features/admin/DashboardPage'));
+const UsersPage = lazy(() => import('./features/admin/UsersPage'));
+const AdminPostsPage = lazy(() => import('./features/admin/PostsPage'));
+const CommentsPage = lazy(() => import('./features/admin/CommentsPage'));
+const AuditPage = lazy(() => import('./features/admin/AuditPage'));
 
 
 
@@ -32,10 +35,14 @@ export default function App() {
             <Route path="auth/callback" element={<CallbackPage />} />
 
             <Route element={<RequireAuth />}>
-                <Route path="posts/new" element={<PostFormPage />} />
-                <Route path="posts/:slug/edit" element={<PostFormPage />} />
                 <Route element={<RequireRole role="admin" />}>
-                    <Route path="admin" element={<AdminHome />} />
+                    <Route path="admin" element={<AdminLayout />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="users" element={<UsersPage />} />
+                    <Route path="posts" element={<AdminPostsPage />} />
+                    <Route path="comments" element={<CommentsPage />} />
+                    <Route path="audit" element={<AuditPage />} />
+                    </Route>
                 </Route>
             </Route>
 
