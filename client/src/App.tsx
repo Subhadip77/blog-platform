@@ -27,27 +27,29 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<Spinner />}>
         <Routes>
-          <Route element={<PublicLayout />}>
-            <Route index element={<PostListPage />} />
-            <Route path="posts/:slug" element={<PostDetailPage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
-            <Route path="auth/callback" element={<CallbackPage />} />
-
+            <Route element={<PublicLayout />}>
+                <Route index element={<PostListPage />} />
+                <Route path="posts/:slug" element={<PostDetailPage />} />
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<RegisterPage />} />
+                <Route path="auth/callback" element={<CallbackPage />} />
+                <Route element={<RequireAuth />}>
+                <Route path="posts/new" element={<PostFormPage />} />
+                <Route path="posts/:slug/edit" element={<PostFormPage />} />
+                </Route>
+                <Route path="*" element={<h1 className="p-8 text-muted">404 Page not found</h1>} />
+            </Route>
             <Route element={<RequireAuth />}>
                 <Route element={<RequireRole role="admin" />}>
                     <Route path="admin" element={<AdminLayout />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="users" element={<UsersPage />} />
-                    <Route path="posts" element={<AdminPostsPage />} />
-                    <Route path="comments" element={<CommentsPage />} />
-                    <Route path="audit" element={<AuditPage />} />
+                        <Route index element={<DashboardPage />} />
+                        <Route path="users" element={<UsersPage />} />
+                        <Route path="posts" element={<AdminPostsPage />} />
+                        <Route path="comments" element={<CommentsPage />} />
+                        <Route path="audit" element={<AuditPage />} />
                     </Route>
                 </Route>
             </Route>
-
-            <Route path="*" element={<h1 className="p-8 text-muted">404 Page not found</h1>} />
-          </Route>
         </Routes>
       </Suspense>
     </BrowserRouter>
