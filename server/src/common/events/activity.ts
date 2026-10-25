@@ -10,9 +10,12 @@ export type ActivityAction =
   | 'post.created'
   | 'post.updated'
   | 'post.deleted'
+  | 'post.restored'
   | 'comment.created'
   | 'comment.updated'
-  | 'comment.deleted';
+  | 'comment.deleted'
+  | 'admin.user_role_changed'
+  | 'admin.user_status_changed';
 
 export interface ActivityEvent {
   action: ActivityAction;

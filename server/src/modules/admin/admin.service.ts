@@ -1,4 +1,3 @@
-import type { FilterQuery } from 'mongoose';
 import { ForbiddenError, NotFoundError } from '../../common/errors/AppError';
 import { activityBus } from '../../common/events/activity';
 import { buildMeta, paginationSchema } from '../../common/utils/pagination';
@@ -10,6 +9,7 @@ import { PostModel } from '../posts/post.model';
 import { UserModel, type UserRole } from '../users/user.model';
 import type { AdminListPostsQuery, AuditQuery, ListUsersQuery } from './admin.schema';
 import type { z } from 'zod';
+import type { QueryFilter } from 'mongoose';
 
 type Page = z.infer<typeof paginationSchema>;
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -27,7 +27,7 @@ export const adminService = {
   },
 
   async listUsers({ page, limit, search, role }: ListUsersQuery) {
-    const filter: FilterQuery<unknown> = {};
+    const filter: QueryFilter<unknown> = {};
     if (role) filter.role = role;
     if (search) {
       const rx = new RegExp(escapeRegex(search), 'i'); // escaped, so user input can't inject a regex
@@ -79,7 +79,7 @@ export const adminService = {
   },
 
   async listPosts({ page, limit, status }: AdminListPostsQuery) {
-    const filter: FilterQuery<unknown> =
+    const filter: QueryFilter<unknown> =
       status === 'active' ? { deletedAt: null } : status === 'deleted' ? { deletedAt: { $ne: null } } : {};
     const [items, total] = await Promise.all([
       PostModel.find(filter)
@@ -122,7 +122,7 @@ export const adminService = {
   },
 
   async listAuditLogs({ page, limit, action, actor }: AuditQuery) {
-    const filter: FilterQuery<unknown> = {};
+    const filter: QueryFilter<unknown> = {};
     if (action) filter.action = action;
     if (actor) filter.actor = actor;
     const [items, total] = await Promise.all([

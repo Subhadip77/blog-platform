@@ -19,4 +19,4 @@ export const auditQuerySchema = paginationSchema.extend({
 
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type AdminListPostsQuery = z.infer<typeof adminListPostsQuerySchema>;
-export type AuditQuery = z.infer<typeof auditQuerySchema>;admin.service.ts
+export type AuditQuery = z.infer<typeof auditQuerySchema>;
