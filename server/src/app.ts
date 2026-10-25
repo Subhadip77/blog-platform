@@ -11,6 +11,7 @@ import { userService } from './modules/users/user.service';
 import authRoutes from './modules/auth/auth.routes';
 import { authenticate } from './middleware/authenticate';
 import { authorize } from './middleware/authorize';
+import postRoutes from './modules/posts/post.routes';
 
 export function createApp() {
   const app = express();
@@ -25,7 +26,9 @@ export function createApp() {
     });
 
     if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
+    
     app.use('/api/v1/auth', authRoutes);
+    app.use('/api/v1/posts', postRoutes);
 
     app.get('/api/v1/_admin-test', authenticate, authorize('admin'), (_req, res) => {
         res.json({ success: true, data: 'hello admin' });
