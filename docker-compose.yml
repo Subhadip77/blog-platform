@@ -1,0 +1,43 @@
+services:
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build: ./server
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development   # keeps cookies non-secure, since local compose runs over plain http
+      PORT: 5001
+      MONGO_URI: mongodb://mongo:27017/blog-platform
+      CLIENT_URL: http://localhost:8080
+      API_URL: http://localhost:5001
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+    ports:
+      - "5001:5001"
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: http://localhost:5001/api/v1
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo-data:

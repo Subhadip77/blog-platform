@@ -1,9 +1,0 @@
-$kind: http-request
-name: "{{baseUrl}}/auth/register"
-description: ""
-url: "{{baseUrl}}/auth/register"
-method: POST
-body:
-  type: json
-  content: '{ "name": "Auth Tester", "email": "auth2@example.com", "password": "Passw0rdOK" }'
-order: 3000
