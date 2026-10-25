@@ -20,11 +20,6 @@ export function createApp() {
     app.get('/api/v1/health', (_req, res) => {
         res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
     });
-
-    app.post('/api/v1/_demo', validate({ body: registerSchema }), async (req, res) => {
-        const user = await userService.createLocal(req.body);
-        res.status(201).json({ success: true, data: user });
-    });
     
     // Next step: routes, notFound, errorHandler
     app.use(notFound);
