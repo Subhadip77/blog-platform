@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
+import { notFound } from './middleware/notFound';
+import { errorHandler } from './middleware/errorHandler';
 
 export function createApp() {
   const app = express();
@@ -16,7 +18,11 @@ export function createApp() {
     res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
   });
 
+  app.get('/api/v1/boom', () => {
+    throw new Error('secret internal detail');
+  });
   // Next step: routes, notFound, errorHandler
-
+  app.use(notFound);
+  app.use(errorHandler);
   return app;
 }
