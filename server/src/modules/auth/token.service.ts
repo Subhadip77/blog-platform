@@ -18,35 +18,36 @@ export interface RefreshPayload {
 export const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
 export const tokenService = {
-  signAccess(payload: AccessPayload) {
-    return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN as SignOptions['expiresIn'],
-    });
-  },
+    signAccess(payload: AccessPayload) {
+        return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: env.JWT_ACCESS_EXPIRES_IN as SignOptions['expiresIn'],
+        });
+    },
 
-  verifyAccess(token: string): AccessPayload {
-    try {
-      const d = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
-      return { sub: d.sub as string, role: d.role };
-    } catch {
-      throw new UnauthorizedError('Invalid or expired token');
-    }
-  },
+    verifyAccess(token: string): AccessPayload {
+        try {
+        const d = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+        return { sub: d.sub as string, role: d.role };
+        } catch {
+        throw new UnauthorizedError('Invalid or expired token');
+        }
+    },
 
-  signRefresh(payload: RefreshPayload) {
-    return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-      algorithm: 'HS256',
-      expiresIn: env.JWT_REFRESH_EXPIRES_DAYS * 24 * 60 * 60, // seconds
-    });
-  },
+    signRefresh(payload: RefreshPayload) {
+        return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: env.JWT_REFRESH_EXPIRES_DAYS * 24 * 60 * 60, // seconds
+        });
+    },
 
-  verifyRefresh(token: string): RefreshPayload {
-    try {
-      const d = jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
-      return { sub: d.sub as string, fam: d.fam, jti: d.jti };
-    } catch {
-      throw new UnauthorizedError('Invalid or expired refresh token');
-    }
-  },
+    verifyRefresh(token: string): RefreshPayload {
+        try {
+            const d = jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+            if (!d.sub || !d.fam || !d.jti) throw new Error('malformed');
+            return { sub: d.sub, fam: d.fam as string, jti: d.jti };
+        } catch {
+            throw new UnauthorizedError('Invalid or expired refresh token');
+        }
+    },
 };

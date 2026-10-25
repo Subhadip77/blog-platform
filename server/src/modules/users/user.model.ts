@@ -1,13 +1,24 @@
-import { Schema, model, type InferSchemaType } from 'mongoose';
+import { Schema, model, type HydratedDocument } from 'mongoose';
 
 export const USER_ROLES = ['user', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
-const userSchema = new Schema(
+export interface User {
+  name: string;
+  email: string;
+  passwordHash?: string;
+  role: UserRole;
+  isActive: boolean;
+  googleId?: string;
+  facebookId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<User>(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 60 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    // optional: social-login users have no password. select:false hides it by default.
     passwordHash: { type: String, select: false },
     role: { type: String, enum: USER_ROLES, default: 'user' },
     isActive: { type: Boolean, default: true },
@@ -25,5 +36,5 @@ const userSchema = new Schema(
   },
 );
 
-export type User = InferSchemaType<typeof userSchema>;
-export const UserModel = model('User', userSchema);
+export type UserDocument = HydratedDocument<User>;
+export const UserModel = model<User>('User', userSchema);
