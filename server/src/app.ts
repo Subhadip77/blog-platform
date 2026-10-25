@@ -14,7 +14,7 @@ import { authorize } from './middleware/authorize';
 import postRoutes from './modules/posts/post.routes';
 import { commentRoutes, postCommentRoutes } from './modules/comments/comment.routes';
 import { requestContext } from './middleware/requestContext';
-
+import adminRoutes from './modules/admin/admin.routes';
 
 export function createApp() {
   const app = express();
@@ -39,6 +39,8 @@ export function createApp() {
 
     app.use('/api/v1/posts/:postId/comments', postCommentRoutes);
     app.use('/api/v1/comments', commentRoutes);
+
+    app.use('/api/v1/admin', adminRoutes)
 
     app.use(requestContext);
     
