@@ -5,11 +5,7 @@ import { buildMeta } from '../../common/utils/pagination';
 import { PostModel } from './post.model';
 import type { CreatePostInput, ListPostsQuery, UpdatePostInput } from './post.schema';
 import type { UserRole } from '../users/user.model';
-
-interface Actor {
-  id: string;
-  role: UserRole;
-}
+import { assertCanModify, type Actor } from '../../common/utils/permissions';
 
 async function generateUniqueSlug(title: string) {
   const base = slugify(title, { lower: true, strict: true }).slice(0, 60) || 'post';
