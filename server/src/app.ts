@@ -8,6 +8,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { validate } from './middleware/validate';
 import { registerSchema } from './modules/auth/auth.schema';
 import { userService } from './modules/users/user.service';
+import authRoutes from './modules/auth/auth.routes';
+
 
 export function createApp() {
   const app = express();
@@ -20,6 +22,9 @@ export function createApp() {
     app.get('/api/v1/health', (_req, res) => {
         res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
     });
+
+    if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
+    app.use('/api/v1/auth', authRoutes);
     
     // Next step: routes, notFound, errorHandler
     app.use(notFound);
