@@ -1,11 +1,11 @@
 import crypto from 'node:crypto';
 import slugify from 'slugify';
-import { ForbiddenError, NotFoundError } from '../../common/errors/AppError';
+import { NotFoundError } from '../../common/errors/AppError';
+import { activityBus } from '../../common/events/activity';
 import { buildMeta } from '../../common/utils/pagination';
+import { assertCanModify, type Actor } from '../../common/utils/permissions';
 import { PostModel } from './post.model';
 import type { CreatePostInput, ListPostsQuery, UpdatePostInput } from './post.schema';
-import type { UserRole } from '../users/user.model';
-import { assertCanModify, type Actor } from '../../common/utils/permissions';
 
 async function generateUniqueSlug(title: string) {
   const base = slugify(title, { lower: true, strict: true }).slice(0, 60) || 'post';
@@ -16,15 +16,18 @@ async function generateUniqueSlug(title: string) {
   return slug;
 }
 
-// The ownership rule lives in ONE place, so posts, comments and admin all share it.
-function assertCanModify(ownerId: { toString(): string }, actor: Actor) {
-  if (ownerId.toString() !== actor.id && actor.role !== 'admin') throw new ForbiddenError();
-}
-
 export const postService = {
   async create(actor: Actor, input: CreatePostInput) {
     const slug = await generateUniqueSlug(input.title);
-    return PostModel.create({ ...input, slug, author: actor.id });
+    const post = await PostModel.create({ ...input, slug, author: actor.id });
+    activityBus.emit({
+      action: 'post.created',
+      actorId: actor.id,
+      targetType: 'post',
+      targetId: post.id,
+      meta: { slug },
+    });
+    return post;
   },
 
   async list({ page, limit, author }: ListPostsQuery) {
@@ -54,7 +57,15 @@ export const postService = {
     assertCanModify(post.author, actor);
 
     Object.assign(post, input); // slug is intentionally NOT regenerated
-    return post.save();
+    await post.save();
+    activityBus.emit({
+      action: 'post.updated',
+      actorId: actor.id,
+      targetType: 'post',
+      targetId: post.id,
+      meta: { fields: Object.keys(input), byAdmin: post.author.toString() !== actor.id },
+    });
+    return post;
   },
 
   async softDelete(actor: Actor, id: string) {
@@ -64,5 +75,12 @@ export const postService = {
 
     post.deletedAt = new Date();
     await post.save();
+    activityBus.emit({
+      action: 'post.deleted',
+      actorId: actor.id,
+      targetType: 'post',
+      targetId: post.id,
+      meta: { byAdmin: post.author.toString() !== actor.id },
+    });
   },
 };

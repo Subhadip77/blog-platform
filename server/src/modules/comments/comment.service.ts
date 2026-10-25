@@ -1,6 +1,7 @@
 import { NotFoundError } from '../../common/errors/AppError';
-import { assertCanModify, type Actor } from '../../common/utils/permissions';
+import { activityBus } from '../../common/events/activity';
 import { buildMeta } from '../../common/utils/pagination';
+import { assertCanModify, type Actor } from '../../common/utils/permissions';
 import { PostModel } from '../posts/post.model';
 import { CommentModel } from './comment.model';
 import type { CommentBody, ListCommentsQuery } from './comment.schema';
@@ -31,6 +32,13 @@ export const commentService = {
   async create(actor: Actor, postId: string, input: CommentBody) {
     await assertPostExists(postId);
     const comment = await CommentModel.create({ post: postId, author: actor.id, content: input.content });
+    activityBus.emit({
+      action: 'comment.created',
+      actorId: actor.id,
+      targetType: 'comment',
+      targetId: comment.id,
+      meta: { postId },
+    });
     return comment.populate('author', 'name');
   },
 
@@ -41,6 +49,13 @@ export const commentService = {
 
     comment.content = input.content;
     await comment.save();
+    activityBus.emit({
+      action: 'comment.updated',
+      actorId: actor.id,
+      targetType: 'comment',
+      targetId: comment.id,
+      meta: { byAdmin: comment.author.toString() !== actor.id },
+    });
     return comment.populate('author', 'name');
   },
 
@@ -50,5 +65,12 @@ export const commentService = {
     assertCanModify(comment.author, actor);
 
     await comment.deleteOne();
+    activityBus.emit({
+      action: 'comment.deleted',
+      actorId: actor.id,
+      targetType: 'comment',
+      targetId: comment.id,
+      meta: { byAdmin: comment.author.toString() !== actor.id },
+    });
   },
 };

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { env } from '../../config/env';
 import { UnauthorizedError } from '../../common/errors/AppError';
 import { DUMMY_HASH, verifyPassword } from '../../common/utils/password';
+import { activityBus } from '../../common/events/activity';
 import { UserModel, type UserRole } from '../users/user.model';
 import { userService } from '../users/user.service';
 import { RefreshTokenModel } from './refreshToken.model';
@@ -29,8 +30,8 @@ async function issueSession(user: { id: string; role: UserRole }, family: string
 export const authService = {
   async register(input: RegisterInput) {
     const user = await userService.createLocal(input);
-    // If TS says role is `string`, write: user.role as UserRole
     const session = await issueSession({ id: user.id, role: user.role });
+    activityBus.emit({ action: 'user.registered', actorId: user.id, targetType: 'user', targetId: user.id });
     return { user, ...session };
   },
 
@@ -41,10 +42,17 @@ export const authService = {
     const passwordOk = await verifyPassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
     if (!user || !user.passwordHash || !passwordOk || !user.isActive) {
+      activityBus.emit({
+        action: 'user.login_failed',
+        actorId: user?.id,
+        targetType: user ? 'user' : undefined,
+        targetId: user?.id,
+      });
       throw new UnauthorizedError('Invalid email or password'); // one message for every failure
     }
 
     const session = await issueSession({ id: user.id, role: user.role });
+    activityBus.emit({ action: 'user.login', actorId: user.id, targetType: 'user', targetId: user.id });
     return { user, ...session };
   },
 
@@ -61,6 +69,12 @@ export const authService = {
     if (!claimed) {
       // Signature is valid but the token was already used or revoked: treat as theft.
       await RefreshTokenModel.updateMany({ family: payload.fam, revokedAt: null }, { revokedAt: new Date() });
+      activityBus.emit({
+        action: 'auth.token_reuse_detected',
+        actorId: payload.sub,
+        targetType: 'session',
+        meta: { family: payload.fam },
+      });
       throw new UnauthorizedError('Session expired, please log in again');
     }
 
@@ -75,8 +89,9 @@ export const authService = {
   async logout(token: string | undefined) {
     if (!token) return;
     try {
-      const { fam } = tokenService.verifyRefresh(token);
+      const { sub, fam } = tokenService.verifyRefresh(token);
       await RefreshTokenModel.updateMany({ family: fam, revokedAt: null }, { revokedAt: new Date() });
+      activityBus.emit({ action: 'user.logout', actorId: sub, targetType: 'user', targetId: sub });
     } catch {
       // Token already invalid or expired: nothing to revoke, and logout stays idempotent.
     }
