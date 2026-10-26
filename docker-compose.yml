@@ -17,7 +17,8 @@ services:
     environment:
       NODE_ENV: development   # keeps cookies non-secure, since local compose runs over plain http
       PORT: 5001
-      MONGO_URI: mongodb://mongo:27017/blog-platform
+      # MONGO_URI: mongodb://mongo:27017/blog-platform
+      MONGO_URI: mongodb+srv://subhadipmishraeng_db_user:5nsUcMNLzb6ocFbN@blogplatform.rghgalo.mongodb.net
       CLIENT_URL: http://localhost:8080
       API_URL: http://localhost:5001
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
