@@ -106,3 +106,11 @@ Refresh tokens are rotated on every use and the whole family is revoked on reuse
 - In-memory rate limiter and event bus: use Redis for multiple instances.
 - Tags and categories, real-time notifications (Socket.io) and optimistic UI updates are planned.
 - Facebook login requires an app in Development mode.
+
+## Testing Demo credentials
+
+## ADMIN 
+admin@demo.com / Admin@12345
+
+## USER
+user@demo.com / User@12345
