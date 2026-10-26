@@ -14,11 +14,12 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    command: sh -c "node dist/scripts/seed.js && node dist/server.js"    
     environment:
       NODE_ENV: development   # keeps cookies non-secure, since local compose runs over plain http
       PORT: 5001
-      # MONGO_URI: mongodb://mongo:27017/blog-platform
-      MONGO_URI: ${MONGO_URI}
+      SEED_DEMO: "true"
+      MONGO_URI: mongodb://mongo:27017/blog-platform
       CLIENT_URL: http://localhost:8080
       API_URL: http://localhost:5001
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
